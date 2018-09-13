@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Movies</title>
+        <link rel="stylesheet" href="css/styles.css">
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+    </head>
+
+    <body>
+        <div id="chartBilheteria"></div>
+        <div id="chartOrcamento"></div>
+        <div id="chartLucro"></div>
+        <div id="chartGenre"></div>
+
+        <script type="text/javascript">
+
+            function render(args) {
+                d3.select(args.idChart).append("h1").text(args.title);
+                d3.select(args.idChart).selectAll("div.h-bar")
+                        .data(args.data)
+                    .enter().append("div")
+                    .attr("class", "h-bar")
+                    .append("span");
+                
+                d3.select(args.idChart).selectAll("div.h-bar")
+                        .data(args.data)
+                    .attr("class", "h-bar " + args.color)
+                    .style("width", function (d) {
+                        return Math.round(lineWidth(args.chartType, d)) + "px";
+                    })
+                    .select("span")
+                        .text(function (d) {
+                            if (args.chartType == 'Genre') {
+                                return d.key;
+                            } else {
+                                return d.Film;
+                            }
+                        });
+                if(comparator(args.chartType))
+                    d3.select(args.idChart)
+                        .selectAll("div.h-bar") 
+                        .sort(comparator(args.chartType));
+            }
+
+            let lineWidth = function (chartType, d) {
+                if (chartType == 'Bilheteria') {
+                    return (d.Worldwide_Gross_M / 3);
+                }
+                if (chartType == 'Orcamento') {
+                    return d.Budget_M * 3;
+                }
+                if (chartType == 'Lucro') {
+                    return (d.Worldwide_Gross_M - d.Budget_M) / 3;
+                }
+                if (chartType == 'Genre') {
+                    return d.value / 10;
+                }
+            };
+
+            let comparator = function (comp) {
+                if (comp == 'Bilheteria') {
+                    return function (a, b) { 
+                        return b.Worldwide_Gross_M - a.Worldwide_Gross_M;
+                    };
+                }
+                if (comp == 'Orcamento') {
+                    return function (a, b) { 
+                        return b.Budget_M - a.Budget_M;
+                    };
+                }
+                if (comp == 'Lucro') {
+                    return function (a, b) { 
+                        return (b.Worldwide_Gross_M - b.Budget_M) - (a.Worldwide_Gross_M - a.Budget_M);
+                    };
+                }
+                if (comp == 'Genre') {
+                    return function (a, b) { 
+                        return b.value - a.value;
+                    };
+                }
+            };
+
+            let groupGenres = function (json) {
+                return d3.nest()
+                .key(function(d) { return d.Genre; })
+                .rollup(function(d) { 
+                    return d3.sum(d, function(g) {
+                        return g.Worldwide_Gross_M; 
+                    });
+                }).entries(json);
+            }
+
+            d3.json("data/movies.json").then(function(json){
+                render({
+                    data: json, 
+                    idChart: "#chartBilheteria",
+                    chartType: "Bilheteria",
+                    title: "Bilheteria em Ordem Decrescente",
+                    color: "red"
+                });
+                render({
+                    data: json, 
+                    idChart: "#chartOrcamento",
+                    chartType: "Orcamento",
+                    title: "Orçamento em Ordem Decrescente",
+                    color: "blue"
+                });
+                render({
+                    data: json, 
+                    idChart: "#chartLucro",
+                    chartType: "Bilheteria",
+                    title: "Lucro em Ordem Decrescente",
+                    color: "green"
+                });
+                render({
+                    data: groupGenres(json), 
+                    idChart: "#chartGenre",
+                    chartType: "Genre",
+                    title: "Bilheteria em Ordem Decrescente por Gênero",
+                    color: "orange"
+                });
+            });
+        </script>
+    </body>
+</html>
