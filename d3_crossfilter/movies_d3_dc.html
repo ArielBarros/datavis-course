@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Movies D3 - DC</title>
+    <link rel="stylesheet" href="css/dc.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/crossfilter.min.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="js/dc.min.js"></script>
+</head>
+<body>
+     <div>
+        <div id="chart1"><h1> Bilheteria por Ano </h1></div>
+        <div id="chart2"><h1> Bilheteria por Gênero </h1></div>
+    </div>
+    <script type="text/javascript">
+        d3.json("data/movies.json").then(function(data){
+            let barChart = dc.barChart('#chart1');
+            let barChart2 = dc.barChart('#chart2');
+
+            let facts = crossfilter(data);
+
+            let yearDim = facts.dimension(function(d){
+                return d.Year;
+            });
+
+            let genreDim = facts.dimension(function(d){
+                return d.Genre;
+            });
+
+            let bilheteriaYearGroup = yearDim.group().reduceSum(function(d) {
+                return d.Worldwide_Gross_M;
+            });
+
+            let bilheteriaGenreGroup = genreDim.group().reduceSum(function(d) {
+                return d.Worldwide_Gross_M;
+            });
+
+            barChart.width(800)
+                     .height(400)
+                     .margins({top: 50, right: 50, bottom: 50, left: 50})
+                     .dimension(yearDim)
+                     .x(d3.scaleBand())
+                     .xUnits(dc.units.ordinal)
+                     .xAxisLabel('Ano')
+                     .yAxisLabel('Bilheteria (mi)')
+                     .barPadding(0.1)
+                     .brushOn(false)
+                     .group(bilheteriaYearGroup);
+
+            barChart2.width(800)
+                     .height(400)
+                     .margins({top: 50, right: 50, bottom: 50, left: 50})
+                     .dimension(yearDim)
+                     .x(d3.scaleBand())
+                     .xUnits(dc.units.ordinal)
+                     .xAxisLabel('Gênero')
+                     .yAxisLabel('Bilheteria (mi)')
+                     .barPadding(0.1)
+                     .brushOn(false)
+                     .group(bilheteriaGenreGroup);
+
+            dc.renderAll();
+
+        });
+    </script>           
+</body>
+</html>
